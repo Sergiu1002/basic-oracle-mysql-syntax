@@ -1,0 +1,348 @@
+-- Set scheme to HR.
+ALTER SESSION SET CURRENT_SCHEMA = HR;
+
+-- 1) Sa se afiseze toate inregistrarile din Employees.
+SELECT * FROM Employees;
+
+-- 2) Sa se afiseze numele si prenume din Employees.
+SELECT first_name, last_name FROM Employees;
+
+-- 3) Sa se afiseze nume, prenume, data angajarii din Employees astfel incat informatiile sa fie afisate in ordinea crescatoare a vechimii.
+SELECT first_name, last_name, hire_date FROM Employees ORDER BY hire_date DESC;
+
+-- 4) Sa se afiseze nume, prenume, data angajarii si salariul crescut cu 15%.
+SELECT first_name, last_name, hire_date, (salary + salary * 0.15) AS salary_big FROM Employees;
+
+-- 5) Sa se afiseze nume, prenume si salariul pentru angajatii cu salariile mai mari decat 10.000 u.m.
+SELECT first_name, last_name, salary FROM Employees WHERE salary > 10000;
+
+-- 6) Sa se afiseze angajatii fara numar de telefon.
+SELECT * FROM Employees WHERE phone_number IS NULL;
+
+-- 7) Sa se afiseze angajatii care au atasat un comision.
+SELECT * FROM Employees WHERE commission_pct IS NOT null;
+
+-- 8) Sa se afiseze denumirea departamentelor precum si numele si prenumele managerului fiecarui departament.
+SELECT Departments.department_name, Employees.first_name, Employees.last_name FROM Departments, Employees WHERE Departments.manager_id = Employees.employee_id;
+
+-- 9) Sa se afiseze nume, prenume, salariu pentru persoanele a caror remuneratie nu se incadreaza intre limitele aferente jobului prestat. 
+SELECT Employees.first_name, Employees.last_name, Employees.salary FROM Employees, Jobs WHERE Employees.job_id = Jobs.job_id AND Employees.salary NOT BETWEEN Jobs.min_salary AND Jobs.max_salary;
+
+-- 10) Sa se afiseze nume, prenume precum si tara si regiunea unde lucreaza fiecare angajat.
+SELECT Employees.first_name, Employees.last_name, Regions.region_name, Countries.country_name 
+FROM Employees, Regions, Locations, Departments, Countries 
+WHERE Employees.department_id = Departments.department_id
+AND Departments.location_id = Locations.location_id
+AND Locations.country_id = Countries.country_id 
+AND Countries.region_id = Regions.region_id; 
+
+-- 	 #######################  2  ###########################
+
+ALTER SESSION SET CURRENT_SCHEMA = HR;
+
+-- 1) Sa se afiseze first name, pentru angajatii al caror nume se termina in "A".
+SELECT first_name FROM Employees WHERE first_name LIKE '%a';
+
+-- 2) Sa se afiseze angajatii care au first name al doilea caracter "a" si salariul este sub 5000 um.
+SELECT * FROM Employees WHERE first_name LIKE '_a%' AND salary < 5000;
+
+-- 3) Sa se afiseze first name, last name, salariul si department id pentru angajatii care au salariu < 3000 um sau pentru cei care au salariul < 5000 si sunt in departamentul 50.
+SELECT first_name, last_name, department_id FROM Employees WHERE salary < 3000 OR (salary < 5000 AND department_id = 50);
+
+-- 4) Sa se afiseze numarul de angajati.
+SELECT Count(employee_id) FROM Employees;
+
+-- 5) Sa se afiseze suma totala cheltuita pentru salarii intr-o luna.
+SELECT SUM(salary) FROM Employees;
+
+-- 6) Sa se afiseze job id, denumirea job-ului, first name si last name.
+SELECT Employees.first_name, Employees.last_name, Jobs.job_id, Jobs.job_title FROM Employees, Jobs WHERE Employees.job_id = Jobs.job_id;
+
+-- 7) Sa se afiseze job id, job title si salariul mediu pe fiecare meserie.
+SELECT Jobs.job_id, Jobs.job_title, ROUND(AVG(Employees.salary)) FROM Jobs, Employees WHERE Jobs.job_id = Employees.job_id GROUP BY jobs.job_id, Jobs.job_title;
+
+-- 8) Sa se afiseze salariatii care au salariile (impreuna cu comisionul) prea mari sau prea mici pentru meseria lor.
+SELECT * FROM Employees, Jobs WHERE (Employees.salary + Employees.salary * NVL(Employees.commission_pct, 0)) NOT BETWEEN Jobs.min_salary AND Jobs.max_salary AND Jobs.job_id = Employees.job_id;
+
+-- 	 #######################  3  ###########################
+
+ALTER SESSION SET CURRENT_SCHEMA = HR;
+
+-- 1) Sa se afiseze salariul maxim, minim, media salariilor si numarul de angajati din fiecare departament. 
+SELECT department_id, MAX(salary) as SalariuMaxim, MIN(salary) as SalariuMinim, Round(AVG(salary)) as SalariuMediu, Count(employee_id) as NrAngajati FROM Employees GROUP BY department_id; 
+
+-- 2) Sa se afiseze numarul de salariati din fiecare departament care au salariul mai mic decat salariul mediu pe firma.
+SELECT department_id, Count(employee_id) FROM Employees WHERE salary < (SELECT AVG(salary) FROM Employees) GROUP BY department_id;
+
+-- 3) Sa se afiseze angajatii care au salariul mai mic decat media salariilor din departamentul lor
+SELECT first_name, last_name FROM Employees, (SELECT AVG(salary) medie, department_id departament FROM Employees GROUP BY department_id) temp
+WHERE salary < temp.medie AND Employees.department_id = temp.departament;
+
+SELECT first_name, last_name FROM Employees a WHERE salary < (SELECT AVG(salary) FROM Employees b WHERE a.department_id = b.department_id);
+
+-- 4) Sa se afiseze departamentele managerilor (ordonate descrescator dupa numarul de manageri din fiecare departament).
+SELECT department_id, Count(employee_id) AS NrManageri FROM Employees, (SELECT DISTINCT manager_id FROM Employees) temp
+WHERE Employees.employee_id = temp.manager_id GROUP BY department_id ORDER BY(NrManageri) DESC;
+
+-- 	 #######################  4  ###########################
+
+ALTER SESSION SET CURRENT_SCHEMA = HR;
+
+-- 1) Sa se afiseze salariile managerilor.
+SELECT salary, employee_id FROM Employees WHERE employee_id IN (SELECT manager_id FROM Employees);
+
+-- 2) Sa se afiseze media salariilor managerilor.
+SELECT ROUND(AVG(salary)) FROM Employees WHERE employee_id IN (SELECT manager_id FROM Employees);
+
+-- 3) Sa se afiseze angajatii care iau salariul mai mare decat media salariilor managerilor
+SELECT * FROM Employees WHERE salary > (SELECT ROUND(AVG(salary)) FROM Employees WHERE employee_id IN (SELECT manager_id FROM Employees));
+
+-- 4) Sa se afiseze angajatii care au salariul mai mare decat cel putin un manager din departamentul lor.
+SELECT * FROM Employees, (SELECT MIN(salary) AS salary, department_id FROM Employees WHERE employee_id IN (SELECT manager_id FROM Employees) GROUP BY(department_id)) temp
+WHERE Employees.salary > temp.salary AND Employees.department_id = temp.department_id;
+
+-- 5) Sa se afiseze angajatii (sa nu fie manageri) care au salariul mai mare decat cel putin un manager din departamentul lor.
+SELECT * FROM Employees, (SELECT MIN(salary) AS salary, department_id FROM Employees WHERE employee_id IN (SELECT manager_id FROM Employees) GROUP BY(department_id)) temp
+WHERE Employees.salary > temp.salary AND Employees.department_id = temp.department_id AND Employees.employee_id NOT IN (SELECT manager_id FROM Employees WHERE manager_id IS NOT NULL);
+
+-- 	 #######################  5  ###########################
+
+ALTER SESSION SET CURRENT_SCHEMA = IE_ALEXANDRU;
+
+-- 1) Creati niste tabele:
+-- a) PRODUSE(codp N3, denp T30, coddep N3)
+-- b) STOCURI(cods N3, cant N4, pret N4)
+CREATE TABLE PRODUSE (codp NUMBER(3), denp VARCHAR(30), coddep NUMBER(3));
+CREATE TABLE STOCURI (cods NUMBER(3), cant NUMBER(4), pret NUMBER(4));
+
+-- 2) Modificari in PRODUSE:
+-- a) coddep N3 => VARCHAR2(5)
+-- b) adaugam campul ump VARCHAR2(3)
+ALTER TABLE PRODUSE MODIFY coddep VARCHAR2(5);
+ALTER TABLE PRODUSE ADD ump VARCHAR2(3);
+
+-- 3) Modificari in STOCURI:
+-- a) cods N3 => codp N3
+-- b) adaugam campul an N4, cu o constrangere ck_an [1999, 2050)
+ALTER TABLE STOCURI RENAME COLUMN cods TO codp;
+ALTER TABLE STOCURI ADD an NUMBER(4);
+ALTER TABLE STOCURI ADD CONSTRAINT ck_an CHECK(an >= 1999 AND an < 2050);
+
+-- 4) Setati cheile primare si straine.
+ALTER TABLE PRODUSE ADD CONSTRAINT codp_pk PRIMARY KEY(codp);
+ALTER TABLE STOCURI ADD CONSTRAINT codpan_pk PRIMARY KEY(codp, an);
+ALTER TABLE STOCURI ADD CONSTRAINT codp_fk FOREIGN KEY(codp) REFERENCES PRODUSE(codp);
+
+-- 5) Inserati in tabelul PRODUSE urmatoarele valori:
+-- a) 1, x, SV, BUC
+INSERT INTO PRODUSE VALUES(1, 'x', 'SV', 'BUC');
+-- b) 2, y, FLT, KG
+INSERT INTO PRODUSE VALUES(2, 'y', 'FLT', 'KG');
+
+-- 6) Inserati in tabelul STOCURI urmatoarele valori:
+-- a) 1, 50, 5, 2017
+INSERT INTO STOCURI VALUES(1, 50, 5, 2017);
+-- b) 3, 75, 5, 2017 - eroare
+INSERT INTO STOCURI VALUES(3, 75, 5, 2017);
+-- c) 2, 10, 5, 2017
+INSERT INTO STOCURI VALUES(2, 10, 5, 2017);
+-- d) 1, 7, 7, 2017 - eroare
+INSERT INTO STOCURI VALUES(1, 7, 7, 2017);
+
+-- 7) Creati un view pentru tabelul STOCURI si afisati-l.
+CREATE VIEW STOCURI_VIEW AS
+SELECT * FROM STOCURI;
+
+SELECT * FROM STOCURI_VIEW;
+
+-- 	 #######################  6  ###########################
+
+ALTER SESSION SET CURRENT_SCHEMA = IE_ALEXANDRU;
+
+-- 1) Cautati sintaxa generala a creaari unei vederi.
+-- 2) Creati un view care sa afiseze salariatul cu cel mai mare salariu
+CREATE VIEW salariat_salariu_mare AS
+SELECT * FROM HR.Employees WHERE salary = (SELECT MAX(salary) FROM HR.Employees);
+
+-- 3) La view-ul creat, acordati drepturi unui coleg (nu merge).
+GRANT SELECT ON salariat_salariu_mare TO IE_MAURA;
+
+-- 4) Dati drepturi unui coleg pentru tabelul produse.
+GRANT ALL ON produse TO IE_MAURA;
+
+-- 5) Afisati toate vederile create.
+SELECT VIEW_NAME FROM USER_VIEWS;
+
+-- 6) Acordati colegului dreptului de update la tabelul produse.
+GRANT UPDATE ON produse TO IE_MAURA;
+
+-- 7) Creati un view pentru tabelul produse.
+CREATE VIEW produse_view AS
+SELECT * FROM produse;
+
+-- 8) Acordati drepturi de update pentru colegul.
+GRANT UPDATE ON produse_view TO IE_MAURA;
+
+UPDATE IE_MAURA.produse1 SET ump = 'kgs' WHERE codp = '1';
+COMMIT;
+
+-- 	 #######################  9  ###########################
+
+-- Facem ceva interesant, ca tot timpul.
+-- I'm User 1 (IE_ALEXANDRU).
+DROP TABLE STOCURI;
+
+SELECT * FROM STOCURI;
+
+ALTER SESSION SET CURRENT_SCHEMA = IE_EVELYN;
+
+UPDATE STOCURI SET pret = 10 WHERE codp = 2;
+
+COMMIT;
+
+INSERT INTO STOCURI VALUES(2, 20, 6, 2018);
+
+SELECT * FROM PRODUSE;
+
+COMMIT;
+
+DELETE FROM STOCURI WHERE codp = 3;
+
+DELETE FROM STOCURI WHERE codp = 2;
+
+INSERT INTO STOCURI VALUES(3, 20, 20, 2018);
+
+UPDATE STOCURI SET an = 2019 WHERE codp = 3 AND an = 2018;
+
+INSERT INTO STOCURI VALUES(4, 5, 5, 2019);
+
+-- 	 #######################  10  ###########################
+
+ALTER SESSION SET CURRENT_SCHEMA = HR;
+
+-- 1) Sa se afiseze first name, last name si valoarea rotunjita a comisionului calculat pentru fiecare angajat.
+SELECT first_name, last_name, ROUND(NVL(commission_pct, 0) * salary) AS suma FROM Employees;
+
+-- 2) Sa se afiseze first name, last name si diferentele salariale fata de salariul mediu pe firma.
+SELECT first_name, last_name, ROUND((salary - (SELECT AVG(salary) FROM Employees))) as Diferenta FROM Employees;
+
+-- 3) Sa se afiseze in coloana NumeSiPrenume, numele cu majuscule si primul caracter din prenume.
+SELECT CONCAT(UPPER(first_name || ' '), SUBSTR(last_name, 1, 1)) as NumeSiPrenume FROM Employees;
+
+-- 4) Sa se afiseze first name, last name, ziua, luna, anul si ziua din saptamana aferenta datei angajarii.
+SELECT first_name, last_name, EXTRACT(YEAR FROM hire_date) as An, EXTRACT(MONTH FROM hire_date) as Luna, EXTRACT(DAY FROM hire_date) as Zi, TO_CHAR(hire_date, 'DAY') as ZiSaptamana FROM Employees;
+
+-- 5) Sa se afiseze first name si numarul de luni scurse de la data angajarii.
+SELECT first_name, ROUND(MONTHS_BETWEEN(SYSDATE, hire_date)) as LuniScurse FROM Employees;
+
+-- 6) Sa se afiseze angajatii a caror nume si prenume incep cu o vocala.
+SELECT * FROM Employees WHERE SUBSTR(first_name, 1, 1) IN ('A','E','I','O','U') AND SUBSTR(last_name, 1, 1) IN ('A','E','I','O','U');
+
+-- 7) Folosind NOT IN sa se afiseze numele, prenumele si departamentul pentru angajatii care nu au istoric in job history.
+SELECT first_name, last_name, department_id FROM employees WHERE employee_id NOT IN (SELECT employee_id FROM job_history)
+
+-- 	 #######################  11  ###########################
+
+ALTER SESSION SET CURRENT_SCHEMA = HR;
+-- 7) Folosind NOT IN sa se afiseze numele, prenumele si departamentul pentru angajatii care nu au istoric in job history.
+SELECT first_name, last_name, department_id
+FROM Employees e
+WHERE NOT EXISTS (SELECT 1 FROM job_history WHERE employee_id = e.employee_id);
+
+-- 8) Folosind LEFT JOIN, aceeasi cerinta.
+SELECT E.first_name, E.last_name, E.department_id
+FROM Employees E
+LEFT JOIN job_history H
+ON E.employee_id = H.employee_id
+WHERE H.employee_id IS NULL;
+
+-- 9) Folosind FULL JOIN, aceeasi cerinta.
+SELECT E.first_name, E.last_name, E.department_id
+FROM Employees E
+FULL JOIN job_history H
+ON E.employee_id = H.employee_id
+WHERE H.employee_id IS NULL;
+
+-- 10) Folosind RIGHT JOIN, aceeasi cerinta.
+SELECT E.first_name, E.last_name, E.department_id
+FROM job_history H
+RIGHT JOIN Employees E
+ON E.employee_id = H.employee_id
+WHERE H.employee_id IS NULL;
+
+-- 11) Sa se afiseze first_name, last_name si un text care sa indice nivelul salariului. Textul va fi "mic" pentru salarii < 10000, "mediu" pentru salarii > 10000 si < 20000 si "mare" pentru salarii peste 20000.
+SELECT first_name, last_name,
+CASE
+    WHEN salary < 10000 THEN 'mic'
+    WHEN salary BETWEEN 10000 and 20000 THEN 'mediu'
+    WHEN salary > 20000 THEN 'mare'
+END as salariu
+FROM Employees;
+
+-- 12) Sa se afiseze first_name, last_name si comisionul (pentru persoanele la care nu avem comision sa se afiseze un text).
+SELECT first_name, last_name,
+CASE
+    WHEN commission_pct IS NOT NULL THEN TO_CHAR(commission_pct)
+    WHEN commission_pct IS NULL THEN 'Nu are comision'
+END as comision
+FROM Employees;
+
+-- 13) Folosind ROLLUP, sa se afiseze numarul de salariati pe departamente.
+SELECT department_id, COUNT(*) as Numar
+FROM Employees
+GROUP BY ROLLUP(department_id);
+
+-- 14) Folosind ROLLUP, sa se afiseze numarul de salariati pe job_id si departamente dar si un nivel de subtotaluri pe departamente
+SELECT department_id, job_id, COUNT(*) as Numar
+FROM Employees
+GROUP BY ROLLUP(department_id, job_id);
+
+-- 15) Sa se afiseze rezultatul de la exercitiul precedent folosind UNION.
+SELECT department_id, job_id, COUNT(*) AS Numar
+FROM employees
+GROUP BY department_id, job_id
+UNION
+SELECT department_id, NULL, COUNT(*) AS Numar
+FROM employees
+GROUP BY department_id;
+
+-- 	 #######################  13  ###########################
+
+ALTER SESSION SET CURRENT_SCHEMA = HR;
+
+-- 1) Folosind o functie, sa se calculeze suma salariilor. In afara functiei, sa se declare o variabila totalCheltuieli 
+-- care va prelua valoarea returnata de catre functie. Sa se afiseze intr-o propozitie totalCheltuieli.
+SET SERVEROUTPUT ON;
+
+CREATE OR REPLACE FUNCTION SumaSalariiCheltuieli
+RETURN NUMBER
+IS 
+    totalCheltuieli NUMBER;
+BEGIN
+    SELECT SUM(salary) INTO totalCheltuieli FROM Employees;
+    RETURN totalCheltuieli;
+END;
+
+DECLARE
+    totalCheltuieli NUMBER;
+BEGIN
+    totalCheltuieli := SumaSalariiCheltuieli();
+    DBMS_OUTPUT.PUT_LINE('Totalul cheltuielilor este de ' || totalCheltuieli);
+END;
+
+-- 2) Sa se afiseze, folosind o functie, numarul de angajati dintr-un departament dat ca si argument.
+CREATE OR REPLACE FUNCTION NumarAngajatiDepartament(dep_id IN NUMBER)
+RETURN NUMBER
+IS
+    totalAngajati NUMBER;
+BEGIN
+    SELECT Count(employee_id) INTO totalAngajati FROM Employees WHERE department_id = dep_id;
+    RETURN totalAngajati;
+END;
+
+DECLARE
+    angajati NUMBER;
+BEGIN
+    angajati := NumarAngajatiDepartament(10);
+    DBMS_OUTPUT.PUT_LINE('Totalul angajatilor pe departamentul ales este de: ' || angajati);
+END;
