@@ -1,0 +1,1 @@
+# basic-oracle-mysql-syntax
