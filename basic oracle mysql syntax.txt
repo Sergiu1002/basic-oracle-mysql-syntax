@@ -392,3 +392,77 @@ JOIN locations l ON d.location_id = l.id
 JOIN countries co ON l.country_id = co.id
 JOIN regions r ON co.region_id = r.id
 JOIN continents c ON r.continent_id = c.id;
+
+— ex1
+SELECT NVL(e.first_name, 'Fără manager') AS First_name,
+       d.department_name,
+       l.city
+FROM departments d
+LEFT JOIN employees e ON d.manager_id = e.employee_id
+JOIN locations l ON d.location_id = l.location_id;
+
+— ex 2
+SELECT departments.department_name
+FROM departments
+FULL OUTER JOIN employees ON departments.department_id = employees.department_id
+FULL OUTER JOIN job_history ON employees.employee_id = job_history.employee_id
+WHERE employees.employee_id IS NULL OR job_history.employee_id IS NULL;
+
+— ex 3
+SELECT departments.department_name, employees.manager_id, COUNT(employees.employee_id) AS num_employees
+FROM employees
+JOIN departments ON employees.department_id = departments.department_id
+GROUP BY ROLLUP (
+  (departments.department_name, employees.manager_id)
+  GROUPING SETS (
+    (departments.department_name),
+    (departments.department_name, employees.manager_id),
+    ()
+  )
+);
+
+— ex 4
+SELECT employee_id, first_name, last_name, manager_id
+FROM employees
+START WITH employee_id = 109
+CONNECT BY PRIOR employee_id = manager_id;
+
+— ex 5
+CREATE OR REPLACE PROCEDURE SUMA
+AS
+  total_salary NUMBER(10, 2);
+BEGIN
+  SELECT SUM(salary) INTO total_salary
+  FROM employees;
+
+  DBMS_OUTPUT.PUT_LINE('Suma totala a salariilor: ' || total_salary);
+END;
+/
+
+— ex 6
+CREATE OR REPLACE PROCEDURE NUMARA_ANGAJATI (p_department_name VARCHAR2)
+AS
+  num_employees NUMBER;
+BEGIN
+  SELECT COUNT(*) INTO num_employees
+  FROM employees
+  JOIN departments ON employees.department_id = departments.department_id
+  WHERE departments.department_name = p_department_name;
+
+  DBMS_OUTPUT.PUT_LINE('Numarul de angajati din departamentul ' || p_department_name || ' este: ' || num_employees);
+END;
+/
+
+— ex7
+CREATE OR REPLACE FUNCTION NUMARA_ORASE_DIN_US (p_tara VARCHAR2)
+RETURN NUMBER
+AS
+  num_cities NUMBER;
+BEGIN
+  SELECT COUNT(*) INTO num_cities
+  FROM cities
+  WHERE country = p_tara;
+
+  RETURN num_cities;
+END;
+/
