@@ -384,3 +384,11 @@ SELECT *
 FROM table1
 CROSS JOIN table2;
 In addition to these types of joins, Oracle SQL also supports the use of subqueries, which can be used to filter or aggregate data from one or more tables before joining them with another table.
+
+SELECT e.name, c.continent
+FROM employees e
+JOIN departments d ON e.department_id = d.id
+JOIN locations l ON d.location_id = l.id
+JOIN countries co ON l.country_id = co.id
+JOIN regions r ON co.region_id = r.id
+JOIN continents c ON r.continent_id = c.id;
