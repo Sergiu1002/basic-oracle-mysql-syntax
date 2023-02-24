@@ -346,3 +346,41 @@ BEGIN
     angajati := NumarAngajatiDepartament(10);
     DBMS_OUTPUT.PUT_LINE('Totalul angajatilor pe departamentul ales este de: ' || angajati);
 END;
+
+In Oracle SQL, there are several types of joins that allow you to combine data from two or more tables based on a common column or set of columns. Here's an overview of the different types of joins:
+
+INNER JOIN: Also known as an equijoin, this type of join returns only the rows that have matching values in both tables. It is the most commonly used type of join in SQL.
+sql
+Copy code
+SELECT *
+FROM table1
+INNER JOIN table2
+ON table1.column_name = table2.column_name;
+LEFT OUTER JOIN: This type of join returns all the rows from the left table and the matching rows from the right table. If there are no matching rows in the right table, the result will contain NULL values for the columns from the right table.
+sql
+Copy code
+SELECT *
+FROM table1
+LEFT OUTER JOIN table2
+ON table1.column_name = table2.column_name;
+RIGHT OUTER JOIN: This type of join is similar to a left outer join, but it returns all the rows from the right table and the matching rows from the left table.
+sql
+Copy code
+SELECT *
+FROM table1
+RIGHT OUTER JOIN table2
+ON table1.column_name = table2.column_name;
+FULL OUTER JOIN: This type of join returns all the rows from both tables, with NULL values in the columns where there are no matches.
+sql
+Copy code
+SELECT *
+FROM table1
+FULL OUTER JOIN table2
+ON table1.column_name = table2.column_name;
+CROSS JOIN: This type of join returns all possible combinations of rows from both tables. It does not require a common column between the tables.
+sql
+Copy code
+SELECT *
+FROM table1
+CROSS JOIN table2;
+In addition to these types of joins, Oracle SQL also supports the use of subqueries, which can be used to filter or aggregate data from one or more tables before joining them with another table.
